@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Barn Studio - Visualisator Kandang Sapi Perah Modern</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Plus Jakarta Sans & Quicksand -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pastel: {
+                            bg: '#F4F7F4',
+                            card: '#FFFFFF',
+                            green: '#D1E7DD',
+                            mint: '#A3E4D7',
+                            sage: '#84A98C',
+                            darkGreen: '#2D5A27',
+                            blue: '#D4E6F1',
+                            blueDark: '#2980B9',
+                            yellow: '#FCF3CF',
+                            amber: '#D4AC0D',
+                            rose: '#FADBD8',
+                            roseDark: '#C0392B',
+                            text: '#2C3E50',
+                            subtext: '#626567'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F4F7F4; color: #2C3E50; }
+        .canvas-container { position: relative; width: 100%; height: 500px; }
+        #three-canvas { width: 100%; height: 100%; border-radius: 1.25rem; display: block; }
+        .pastel-card {
+            background: #FFFFFF;
+            border: 1px solid #E5E8E8;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #F4F7F4; }
+        ::-webkit-scrollbar-thumb { background: #BDC3C7; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #95A5A6; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-pastel-bg text-pastel-text">
+
+    <!-- Header Navigation -->
+    <header class="bg-white/90 border-b border-emerald-100 sticky top-0 z-50 backdrop-blur-md shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-emerald-100/80 p-2.5 rounded-2xl border border-emerald-200 text-emerald-700 shadow-sm">
+                        <i class="fa-solid fa-cow text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold text-emerald-950 tracking-tight flex items-center gap-1.5 font-['Quicksand']">
+                            SMART BARN <span class="text-emerald-600 font-normal">STUDIO</span>
+                        </h1>
+                        <p class="text-xs text-slate-500">Visualisasi & Simulasi Desain Kandang Sapi Perah Modern</p>
+                    </div>
+                </div>
+                <!-- Status Badge -->
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Interactive Demo
+                </span>
+            </div>
+            
+            <!-- Navigation Tabs -->
+            <nav class="flex items-center bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80 text-xs font-semibold w-full md:w-auto overflow-x-auto">
+                <button id="tab-3d" onclick="switchView('3d')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-emerald-900 bg-white shadow-sm transition flex items-center justify-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-cube text-emerald-600"></i>
+                    <span>Model 3D</span>
+                </button>
+                <button id="tab-2d" onclick="switchView('2d')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-slate-600 hover:text-emerald-800 transition flex items-center justify-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-map text-emerald-500"></i>
+                    <span>Denah 2D</span>
+                </button>
+                <button id="tab-thi" onclick="switchView('thi')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-slate-600 hover:text-emerald-800 transition flex items-center justify-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-temperature-arrow-up text-amber-500"></i>
+                    <span>Simulasi Iklim (THI)</span>
+                </button>
+                <button id="tab-specs" onclick="switchView('specs')" class="flex-1 md:flex-none px-4 py-2 rounded-xl text-slate-600 hover:text-emerald-800 transition flex items-center justify-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-microchip text-sky-500"></i>
+                    <span>Spesifikasi Alat</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+        <!-- TAB 1: 3D INTERACTIVE MODEL -->
+        <section id="view-3d" class="space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                <div class="lg:col-span-3 pastel-card rounded-3xl p-5 flex flex-col justify-between">
+                    <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-eye text-emerald-600 text-sm"></i>
+                            <h2 class="text-xs sm:text-sm font-bold text-slate-800">Visualisasi 3D Kandang Interaktif</h2>
+                        </div>
+                        <div class="flex space-x-2 text-xs">
+                            <button onclick="reset3DCamera()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl border border-slate-200 transition flex items-center gap-1.5 font-medium">
+                                <i class="fa-solid fa-rotate-left"></i> Reset Kamera
+                            </button>
+                            <button id="btn-toggle-roof" onclick="toggleRoof()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-sm transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-house-crack"></i> Sembunyikan Atap
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3D Canvas Container -->
+                    <div class="canvas-container bg-slate-50 rounded-2xl overflow-hidden border border-emerald-100">
+                        <canvas id="three-canvas"></canvas>
+                        <!-- Floating Instruction -->
+                        <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur border border-slate-200 px-3 py-2 rounded-xl text-[11px] text-slate-600 shadow-sm pointer-events-none flex items-center gap-2 font-medium">
+                            <i class="fa-solid fa-hand-pointer text-emerald-600"></i>
+                            <span>Putar: Klik Kiri | Pergeseran: Klik Kanan | Zoom: Scroll Mouse</span>
+                        </div>
+                    </div>
+
+                    <!-- Focus Buttons -->
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap gap-2 text-xs items-center">
+                        <span class="text-slate-500 font-medium mr-1 text-[11px]">Fokus Kamera Area:</span>
+                        <button onclick="focusZone('overview')" class="px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 rounded-xl transition border border-slate-200 font-medium">Seluruh Kandang</button>
+                        <button onclick="focusZone('ams')" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl transition font-medium">Robot Perah (AMS)</button>
+                        <button onclick="focusZone('feed')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl transition font-medium">Jalur Pakan</button>
+                        <button onclick="focusZone('stalls')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl transition font-medium">Tempat Istirahat Sapi</button>
+                        <button onclick="focusZone('bcs')" class="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 rounded-xl transition font-medium">Kamera BCS 3D</button>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar Details -->
+                <div class="space-y-4">
+                    <!-- Zone Description Box -->
+                    <div class="pastel-card rounded-3xl p-5">
+                        <h3 class="text-sm font-bold text-slate-800 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-emerald-600"></i>
+                            <span id="zone-title">Detail Zona Kandang</span>
+                        </h3>
+                        <div id="zone-description" class="text-xs text-slate-600 space-y-3 leading-relaxed font-normal">
+                            <p>Pilih sudut pandang kamera untuk melihat tata letak arsitektur serta integrasi teknologi AI pada tiap zona.</p>
+                            <div class="bg-emerald-50/60 p-3.5 rounded-2xl border border-emerald-100 space-y-2 text-[11px]">
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Luas Bangunan:</span>
+                                    <strong class="text-slate-800">60m x 30m (1800 m²)</strong>
+                                </div>
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Kapasitas Sapi:</span>
+                                    <strong class="text-emerald-700 font-bold">100 Ekor Laktasi</strong>
+                                </div>
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Tipe Kandang:</span>
+                                    <strong class="text-slate-800">Free-Stall Open Alley</strong>
+                                </div>
+                                <div class="flex justify-between text-slate-600">
+                                    <span>Tinggi Atap Utama:</span>
+                                    <strong class="text-slate-800">8.0 Meter</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Telemetry Live Card -->
+                    <div class="pastel-card rounded-3xl p-5 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Telemetry Sensor Kandang</h3>
+                            <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold">LIVE</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs">
+                            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                                <span class="text-slate-500 block text-[10px]">Suhu Ruangan</span>
+                                <span id="telemetry-temp" class="text-sm font-bold text-slate-800">26.5 °C</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                                <span class="text-slate-500 block text-[10px]">Kelembaban (RH)</span>
+                                <span id="telemetry-rh" class="text-sm font-bold text-slate-800">70 %</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                                <span class="text-slate-500 block text-[10px]">Indeks THI</span>
+                                <span id="telemetry-thi" class="text-sm font-bold text-amber-600">76.2</span>
+                            </div>
+                            <div class="bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                                <span class="text-slate-500 block text-[10px]">Status Kipas HVLS</span>
+                                <span id="telemetry-fan" class="text-sm font-bold text-emerald-600">80% Speed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 2: 2D BLUEPRINT VIEW -->
+        <section id="view-2d" class="hidden space-y-6">
+            <div class="pastel-card rounded-3xl p-6">
+                <div class="flex flex-wrap justify-between items-center mb-4 gap-4">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-drafting-compass text-emerald-600"></i>
+                            Denah & Blueprint Layout Dwimatra (2D Floor Plan)
+                        </h2>
+                        <p class="text-xs text-slate-500">Skala rekayasa denah 60m x 30m. Klik zona mana saja pada denah untuk detail fungsionalnya.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-3 text-xs">
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-200 border border-amber-400"></span> Jalur Pakan</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-200 border border-emerald-400"></span> Tempat Istirahat</span>
+                        <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-sky-200 border border-sky-400"></span> Robot Perah & Tangki</span>
+                    </div>
+                </div>
+
+                <!-- SVG Blueprint Display -->
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200 overflow-x-auto">
+                    <svg viewBox="0 0 1000 550" class="w-full h-auto min-w-[700px] font-sans">
+                        <defs>
+                            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E8F0" stroke-width="0.8"/>
+                            </pattern>
+                        </defs>
+                        <rect width="1000" height="550" fill="#FAFAFA"/>
+                        <rect width="1000" height="550" fill="url(#grid)" />
+
+                        <!-- Outer Wall -->
+                        <rect x="50" y="30" width="900" height="480" rx="10" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="6 3"/>
+                        <text x="500" y="20" fill="#64748B" font-size="11" font-weight="700" text-anchor="middle">PANJANG BANGUNAN KANDANG: 60 METER</text>
+                        <text x="25" y="270" fill="#64748B" font-size="11" font-weight="700" text-anchor="middle" transform="rotate(-90 25 270)">LEBAR: 30 METER</text>
+
+                        <!-- Feed Alley -->
+                        <g class="cursor-pointer hover:opacity-90 transition" onclick="selectBlueprintZone('Feed Alley')">
+                            <rect x="70" y="50" width="860" height="70" rx="8" fill="#FEF3C7" stroke="#F59E0B" stroke-width="1.5"/>
+                            <text x="500" y="82" fill="#B45309" font-size="12" font-weight="bold" text-anchor="middle">JALUR PAKAN UTAMA (FEED ALLEY) - LEBAR 4.5 METER</text>
+                            <text x="500" y="98" fill="#D97706" font-size="10" text-anchor="middle">[ Operasional Robot Pakan Otomatis AI ]</text>
+                        </g>
+
+                        <!-- North Cubicles -->
+                        <g class="cursor-pointer hover:opacity-90 transition" onclick="selectBlueprintZone('Cubicles Sisi Utara')">
+                            <rect x="70" y="130" width="860" height="80" rx="8" fill="#D1E7DD" stroke="#10B981" stroke-width="1.5"/>
+                            <text x="500" y="175" fill="#065F46" font-size="12" font-weight="bold" text-anchor="middle">AREA ISTIRAHAT UTARA (50 SKAT MATRAS KARET EMPUK)</text>
+                        </g>
+
+                        <!-- Manure Alley -->
+                        <g class="cursor-pointer hover:opacity-90 transition" onclick="selectBlueprintZone('Manure Alley & Scraper')">
+                            <rect x="70" y="220" width="860" height="40" rx="6" fill="#E2E8F0" stroke="#94A3B8" stroke-width="1.5"/>
+                            <text x="500" y="244" fill="#475569" font-size="10" font-weight="bold" text-anchor="middle">JALUR KOTORAN + SCRAPER OTOMATIS (MANURE ALLEY)</text>
+                        </g>
+
+                        <!-- South Cubicles -->
+                        <g class="cursor-pointer hover:opacity-90 transition" onclick="selectBlueprintZone('Cubicles Sisi Selatan')">
+                            <rect x="70" y="270" width="860" height="80" rx="8" fill="#D1E7DD" stroke="#10B981" stroke-width="1.5"/>
+                            <text x="500" y="315" fill="#065F46" font-size="12" font-weight="bold" text-anchor="middle">AREA ISTIRAHAT SELATAN (50 SKAT MATRAS KARET EMPUK)</text>
+                        </g>
+
+                        <!-- AMS & Processing -->
+                        <g class="cursor-pointer hover:opacity-90 transition" onclick="selectBlueprintZone('Stasiun Pemerahan AMS')">
+                            <rect x="70" y="370" width="300" height="120" rx="10" fill="#D4E6F1" stroke="#3B82F6" stroke-width="2"/>
+                            <text x="220" y="420" fill="#1E40AF" font-size="12" font-weight="bold" text-anchor="middle">ROBOT PERAH (AMS)</text>
+                            <text x="220" y="438" fill="#2563EB" font-size="10" text-anchor="middle">Lengan Laser 3D & In-line Milk Analyzer</text>
+                        </g>
+
+                        <g class="cursor-pointer hover:opacity-90 transition" onclick="selectBlueprintZone('Smart Sorting Gates & BCS Lane')">
+                            <rect x="380" y="370" width="250" height="120" rx="10" fill="#F3E8FF" stroke="#A855F7" stroke-width="2"/>
+                            <text x="505" y="420" fill="#6B21A8" font-size="12" font-weight="bold" text-anchor="middle">SMART SORTING GATE</text>
+                            <text x="505" y="438" fill="#7E22CE" font-size="10" text-anchor="middle">+ Kamera 3D Overhead BCS</text>
+                        </g>
+
+                        <g class="cursor-pointer hover:opacity-90 transition" onclick="selectBlueprintZone('Ruang Server AI & Bulk Tank')">
+                            <rect x="640" y="370" width="290" height="120" rx="10" fill="#E0F2FE" stroke="#0284C7" stroke-width="2"/>
+                            <text x="785" y="420" fill="#075985" font-size="12" font-weight="bold" text-anchor="middle">TANGKI SUSU & SERVER AI</text>
+                            <text x="785" y="438" fill="#0284C7" font-size="10" text-anchor="middle">Tangki Pendingin 5000L & Edge Hub</text>
+                        </g>
+                    </svg>
+                </div>
+
+                <!-- Inspector Panel -->
+                <div id="blueprint-details" class="mt-4 bg-emerald-50/50 p-4 rounded-2xl border border-emerald-100 text-xs text-slate-700">
+                    <h4 class="font-bold text-emerald-800 text-sm mb-1" id="bp-title">Pilih Zona Pada Denah</h4>
+                    <p id="bp-desc">Klik salah satu blok warna pada gambar blueprint di atas untuk menampilkan fungsi peralatan serta alur kerjanya.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: THI CLIMATE SIMULATOR -->
+        <section id="view-thi" class="hidden space-y-6">
+            <div class="pastel-card rounded-3xl p-6 space-y-6">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-temperature-arrow-up text-amber-500"></i>
+                        Simulasi Otomatis Suhu Mikroiklim Kandang (Indeks THI)
+                    </h2>
+                    <p class="text-xs text-slate-500">Geser slider suhu dan kelembaban di bawah ini untuk melihat simulasi sistem pendingin kipas HVLS dan sprinkler saat mengatasi stres panas sapi.</p>
+                </div>
+
+                <!-- Formula Card -->
+                <div class="bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80 text-xs flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <span class="text-amber-900 block text-[11px] font-bold uppercase tracking-wider mb-1">Rumus Indeks THI (Temperature-Humidity Index):</span>
+                        <code class="bg-white px-3 py-1.5 rounded-xl border border-amber-200 font-mono text-emerald-800 text-xs sm:text-sm font-semibold">THI = 0.8 × T + (RH / 100) × (T - 14.3) + 46.4</code>
+                    </div>
+                    <div class="text-slate-600 text-[11px]">
+                        <span>Ket: <strong>T</strong> = Suhu Udara (°C) | <strong>RH</strong> = Kelembaban Relatif (%)</span>
+                    </div>
+                </div>
+
+                <!-- Sliders & Output -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2 bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-5">
+                        <!-- Temp Slider -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-xs font-semibold">
+                                <label for="sim-temp" class="text-slate-700">Suhu Udara Ruangan ($T$):</label>
+                                <span id="sim-temp-val" class="text-emerald-700 font-bold text-sm">26.5 °C</span>
+                            </div>
+                            <input type="range" id="sim-temp" min="18" max="40" step="0.5" value="26.5" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600" oninput="updateTHISimulation()">
+                        </div>
+
+                        <!-- Humidity Slider -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-xs font-semibold">
+                                <label for="sim-rh" class="text-slate-700">Kelembaban Relatif ($RH$):</label>
+                                <span id="sim-rh-val" class="text-sky-700 font-bold text-sm">70 %</span>
+                            </div>
+                            <input type="range" id="sim-rh" min="30" max="95" step="1" value="70" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-sky-600" oninput="updateTHISimulation()">
+                        </div>
+                    </div>
+
+                    <!-- THI Result Card -->
+                    <div id="thi-status-card" class="bg-white p-5 rounded-2xl border border-amber-200 flex flex-col justify-between text-center shadow-sm">
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Hasil Indeks THI Terhitung</span>
+                        <div class="my-2">
+                            <span id="thi-score" class="text-4xl font-black text-amber-600">76.2</span>
+                            <span id="thi-category" class="block text-xs font-bold text-amber-700 mt-1">Stres Panas Ringan</span>
+                        </div>
+                        <div id="thi-action-badge" class="bg-amber-100 text-amber-900 border border-amber-300 text-[11px] p-2.5 rounded-xl font-semibold">
+                            Kipas HVLS 80% Speed + Sprinkler Standby
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reference Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200">
+                        <span class="font-bold text-emerald-800 block mb-1">THI &lt; 68: Nyaman</span>
+                        <p class="text-slate-600 text-[11px]">Sapi merasa rileks. Kipas beroperasi dengan daya minimal (20%) untuk menjaga sirkulasi udara standar.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200">
+                        <span class="font-bold text-amber-800 block mb-1">68 ≤ THI &lt; 72: Stres Ringan</span>
+                        <p class="text-slate-600 text-[11px]">Sistem AI menaikkan kecepatan Kipas HVLS ke 70-80% untuk mengurangi tumpukan suhu tubuh sapi.</p>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200">
+                        <span class="font-bold text-rose-800 block mb-1">THI ≥ 72: Stres Berat</span>
+                        <p class="text-slate-600 text-[11px]">Kipas HVLS bekerja 100% penuh + sistem penyemprot air (*misting sprinkler*) menyala otomatis.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: HARDWARE SPECS TABLE -->
+        <section id="view-specs" class="hidden space-y-6">
+            <div class="pastel-card rounded-3xl p-6 space-y-4">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-microchip text-sky-600"></i>
+                        Spesifikasi Perangkat Hardware AI & Sensor
+                    </h2>
+                    <p class="text-xs text-slate-500">Tabel katalog spesifikasi komponen sensor, komunikasi data, dan fungsionalitasnya.</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-700">
+                        <thead class="bg-slate-100 text-slate-800 uppercase font-bold text-[11px] border-b border-slate-200">
+                            <tr>
+                                <th class="p-3.5">Perangkat Hardware</th>
+                                <th class="p-3.5">Algoritma / Teknologi</th>
+                                <th class="p-3.5">Posisi Pasang</th>
+                                <th class="p-3.5">Fungsi Utama</th>
+                                <th class="p-3.5">Koneksi Data</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            <tr class="hover:bg-emerald-50/40 transition">
+                                <td class="p-3.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-camera text-purple-600"></i>
+                                    Kamera Depth 3D BCS
+                                </td>
+                                <td class="p-3.5">CNN Deep Learning (Point Cloud)</td>
+                                <td class="p-3.5">Overhead Pintu Keluar Perah</td>
+                                <td class="p-3.5">Mengukur skor kondisi tubuh (1-5) secara otomatis tanpa kontak</td>
+                                <td class="p-3.5"><span class="px-2.5 py-1 rounded-full bg-purple-100 text-purple-800 text-[10px] font-semibold">GigE Fiber</span></td>
+                            </tr>
+                            <tr class="hover:bg-emerald-50/40 transition">
+                                <td class="p-3.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-ring text-emerald-600"></i>
+                                    Smart Collar IoT
+                                </td>
+                                <td class="p-3.5">Akselerometer 3-Sumbu & Sensor Suhu</td>
+                                <td class="p-3.5">Kalung Leher Sapi</td>
+                                <td class="p-3.5">Mendeteksi masa subur (estrus) & gelembung awal mastitis lewat pola memamah</td>
+                                <td class="p-3.5"><span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-semibold">LoRaWAN</span></td>
+                            </tr>
+                            <tr class="hover:bg-emerald-50/40 transition">
+                                <td class="p-3.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-robot text-amber-600"></i>
+                                    Robot Feed Pusher
+                                </td>
+                                <td class="p-3.5">Navigasi Lidar SLAM</td>
+                                <td class="p-3.5">Jalur Pakan Utama</td>
+                                <td class="p-3.5">Mendorong dan meratakan pakan mendekati jangkauan sapi tiap 2 jam</td>
+                                <td class="p-3.5"><span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-semibold">Wi-Fi Mesh</span></td>
+                            </tr>
+                            <tr class="hover:bg-emerald-50/40 transition">
+                                <td class="p-3.5 font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-faucet-drip text-sky-600"></i>
+                                    Robot Perah (AMS)
+                                </td>
+                                <td class="p-3.5">3D Laser Vision & Spectrometry</td>
+                                <td class="p-3.5">Stasiun Perah AMS</td>
+                                <td class="p-3.5">Pemerahan otomatis, uji nutrisi susu, memisah susu terindikasi penyakit</td>
+                                <td class="p-3.5"><span class="px-2.5 py-1 rounded-full bg-sky-100 text-sky-800 text-[10px] font-semibold">Industrial Ethernet</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 text-slate-500 text-xs py-4 text-center mt-auto">
+        <p>© 2026 Smart Barn Architecture Studio | Visualisasi Kandang Sapi Perah Modern</p>
+    </footer>
+
+    <script>
+        function switchView(viewName) {
+            const views = ['3d', '2d', 'thi', 'specs'];
+            views.forEach(v => {
+                const el = document.getElementById('view-' + v);
+                const btn = document.getElementById('tab-' + v);
+                if (v === viewName) {
+                    el.classList.remove('hidden');
+                    btn.classList.add('text-emerald-900', 'bg-white', 'shadow-sm');
+                    btn.classList.remove('text-slate-600');
+                } else {
+                    el.classList.add('hidden');
+                    btn.classList.remove('text-emerald-900', 'bg-white', 'shadow-sm');
+                    btn.classList.add('text-slate-600');
+                }
+            });
+
+            if (viewName === '3d' && renderer) {
+                onWindowResize();
+            }
+        }
+
+        function selectBlueprintZone(zoneName) {
+            const bpTitle = document.getElementById('bp-title');
+            const bpDesc = document.getElementById('bp-desc');
+            bpTitle.innerText = "Zona Selected: " + zoneName;
+
+            const descriptions = {
+                'Feed Alley': 'Jalur pakan utama selebar 4.5m. Sangat lapang untuk dilintasi truk pakan dan memberikan ruang gerak bebas bagi Robot Pakan Otomatis.',
+                'Cubicles Sisi Utara': 'Baris tempat tidur sapi dengan karpet karet empuk bermutu tinggi untuk mencegah trauma lutut dan menjaga kebersihan ambing.',
+                'Cubicles Sisi Selatan': 'Area istirahat tambahan 50 unit skat. Memastikan seluruh sapi mempunyai area tidur mandiri tanpa perebutan wilayah.',
+                'Manure Alley & Scraper': 'Koridor buang kotoran. Pembersih kabel otomatis (scraper) bergerak perlahan tiap 2 jam menarik kotoran menuju bak penampungan.',
+                'Stasiun Pemerahan AMS': 'Area Robot Perah Otomatis. Sapi masuk secara teratur untuk diperah sembari menikmati suplemen pakan konsentrat.',
+                'Smart Sorting Gates & BCS Lane': 'Pintu gerbang otomatis berpenjaga kamera 3D BCS. Memisahkan sapi yang memerlukan perhatian khusus atau masa subur ke kandang terpisah.',
+                'Ruang Server AI & Bulk Tank': 'Pusat pengolahan data lokal (Edge AI) serta ruang tangki pendingin susu utama berkapasitas 5.000 liter pada suhu stabil 4°C.'
+            };
+
+            bpDesc.innerText = descriptions[zoneName] || 'Deskripsi rincian teknis area.';
+        }
+
+        function updateTHISimulation() {
+            const temp = parseFloat(document.getElementById('sim-temp').value);
+            const rh = parseFloat(document.getElementById('sim-rh').value);
+
+            document.getElementById('sim-temp-val').innerText = temp.toFixed(1) + " °C";
+            document.getElementById('sim-rh-val').innerText = rh.toFixed(0) + " %";
+
+            const thi = (0.8 * temp) + ((rh / 100) * (temp - 14.3)) + 46.4;
+
+            const scoreEl = document.getElementById('thi-score');
+            const catEl = document.getElementById('thi-category');
+            const badgeEl = document.getElementById('thi-action-badge');
+
+            scoreEl.innerText = thi.toFixed(1);
+
+            document.getElementById('telemetry-temp').innerText = temp.toFixed(1) + " °C";
+            document.getElementById('telemetry-rh').innerText = rh.toFixed(0) + " %";
+            document.getElementById('telemetry-thi').innerText = thi.toFixed(1);
+
+            if (thi < 68) {
+                catEl.innerText = "Kondisi Nyaman (Ideal)";
+                catEl.className = "block text-xs font-bold text-emerald-700 mt-1";
+                badgeEl.innerText = "Kipas HVLS Daya Minimal (20%) | Sprinkler OFF";
+                badgeEl.className = "bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] p-2.5 rounded-xl font-semibold";
+                document.getElementById('telemetry-fan').innerText = "20% Speed";
+            } else if (thi >= 68 && thi < 72) {
+                catEl.innerText = "Stres Panas Ringan";
+                catEl.className = "block text-xs font-bold text-amber-700 mt-1";
+                badgeEl.innerText = "Kipas HVLS Naik ke 70% Speed | Sprinkler Standby";
+                badgeEl.className = "bg-amber-100 text-amber-900 border border-amber-300 text-[11px] p-2.5 rounded-xl font-semibold";
+                document.getElementById('telemetry-fan').innerText = "70% Speed";
+            } else {
+                catEl.innerText = "Stres Panas Berat!";
+                catEl.className = "block text-xs font-bold text-rose-700 mt-1";
+                badgeEl.innerText = "Kipas HVLS 100% Speed + Misting Sprinkler AKTIF!";
+                badgeEl.className = "bg-rose-100 text-rose-900 border border-rose-300 text-[11px] p-2.5 rounded-xl font-semibold animate-pulse";
+                document.getElementById('telemetry-fan').innerText = "100% MAX";
+            }
+        }
+
+        let scene, camera, renderer, controls;
+        let roofMeshGroup;
+        let fanBlades = [];
+        let isRoofVisible = true;
+
+        function init3D() {
+            const container = document.querySelector('.canvas-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xF0F4F1); // Pastel soft sage/gray
+
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+            camera.position.set(40, 35, 50);
+
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('three-canvas'), antialias: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxPolarAngle = Math.PI / 2 - 0.05;
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(30, 50, 20);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            const gridHelper = new THREE.GridHelper(100, 50, 0xA3E4D7, 0xE5E8E8);
+            scene.add(gridHelper);
+
+            buildBarn();
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        function buildBarn() {
+            // Floor
+            const floorGeo = new THREE.BoxGeometry(60, 0.4, 30);
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0xD5D8DC, roughness: 0.7 });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
+            floor.position.y = -0.2;
+            scene.add(floor);
+
+            // Feed Alley Corridor
+            const feedGeo = new THREE.BoxGeometry(60, 0.05, 6);
+            const feedMat = new THREE.MeshStandardMaterial({ color: 0xF9E79F }); // Pastel yellow
+            const feedAlley = new THREE.Mesh(feedGeo, feedMat);
+            feedAlley.position.set(0, 0.05, -8);
+            scene.add(feedAlley);
+
+            // Cubicle Rows
+            for (let i = -25; i <= 25; i += 5) {
+                const cubN = new THREE.Mesh(
+                    new THREE.BoxGeometry(3.5, 0.3, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xA3E4D7 }) // Pastel mint
+                );
+                cubN.position.set(i, 0.2, 0);
+                scene.add(cubN);
+
+                const cubS = new THREE.Mesh(
+                    new THREE.BoxGeometry(3.5, 0.3, 8),
+                    new THREE.MeshStandardMaterial({ color: 0xA3E4D7 })
+                );
+                cubS.position.set(i, 0.2, 8);
+                scene.add(cubS);
+            }
+
+            // Pillars
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0xABB2B9, metalness: 0.2 });
+            for (let x = -28; x <= 28; x += 14) {
+                for (let z = -14; z <= 14; z += 14) {
+                    const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 8), pillarMat);
+                    pillar.position.set(x, 4, z);
+                    scene.add(pillar);
+                }
+            }
+
+            // HVLS Fans
+            for (let x = -20; x <= 20; x += 20) {
+                const fanHub = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.5, 0.5, 0.3),
+                    new THREE.MeshStandardMaterial({ color: 0x5DADE2 })
+                );
+                fanHub.position.set(x, 7.2, 0);
+
+                const bladeGeo = new THREE.BoxGeometry(5, 0.05, 0.4);
+                const bladeMat = new THREE.MeshStandardMaterial({ color: 0xA9CCE3 });
+                const bladeMesh = new THREE.Mesh(bladeGeo, bladeMat);
+                fanHub.add(bladeMesh);
+
+                fanBlades.push(fanHub);
+                scene.add(fanHub);
+            }
+
+            // AMS Station Box
+            const amsGeo = new THREE.BoxGeometry(8, 3.5, 6);
+            const amsMat = new THREE.MeshStandardMaterial({ color: 0x85C1E9, roughness: 0.4 });
+            const amsStation = new THREE.Mesh(amsGeo, amsMat);
+            amsStation.position.set(-22, 1.75, 11);
+            scene.add(amsStation);
+
+            // Overhead BCS Camera Ring
+            const bcsFrame = new THREE.Mesh(
+                new THREE.TorusGeometry(2, 0.15, 8, 24),
+                new THREE.MeshStandardMaterial({ color: 0xBB8FCE })
+            );
+            bcsFrame.rotation.x = Math.PI / 2;
+            bcsFrame.position.set(-14, 3, 11);
+            scene.add(bcsFrame);
+
+            // Robot Feed Pusher
+            const robotGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.8, 16);
+            const robotMat = new THREE.MeshStandardMaterial({ color: 0xF8C471 });
+            const feedRobot = new THREE.Mesh(robotGeo, robotMat);
+            feedRobot.position.set(10, 0.5, -8);
+            scene.add(feedRobot);
+
+            // Roof Group
+            roofMeshGroup = new THREE.Group();
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0xBDC3C7, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
+
+            const roofLeftGeo = new THREE.PlaneGeometry(62, 16);
+            const roofLeft = new THREE.Mesh(roofLeftGeo, roofMat);
+            roofLeft.position.set(0, 9.2, -7.5);
+            roofLeft.rotation.x = Math.PI / 6;
+            roofMeshGroup.add(roofLeft);
+
+            const roofRight = new THREE.Mesh(roofLeftGeo, roofMat);
+            roofRight.position.set(0, 9.2, 7.5);
+            roofRight.rotation.x = -Math.PI / 6;
+            roofMeshGroup.add(roofRight);
+
+            scene.add(roofMeshGroup);
+        }
+
+        function toggleRoof() {
+            isRoofVisible = !isRoofVisible;
+            roofMeshGroup.visible = isRoofVisible;
+            const btn = document.getElementById('btn-toggle-roof');
+            btn.innerHTML = isRoofVisible ?
+                '<i class="fa-solid fa-house-crack"></i> Sembunyikan Atap' :
+                '<i class="fa-solid fa-house"></i> Tampilkan Atap';
+        }
+
+        function focusZone(zoneKey) {
+            const titleEl = document.getElementById('zone-title');
+            const descEl = document.getElementById('zone-description');
+
+            if (zoneKey === 'overview') {
+                camera.position.set(40, 35, 50);
+                controls.target.set(0, 0, 0);
+                titleEl.innerText = "Overview Seluruh Bangunan";
+                descEl.innerHTML = `<p>Sistem Free-Stall seluas 1800 m² berkapasitas 100 ekor sapi laktasi. Sirkulasi didesain terbuka dengan atap tinggi untuk menjaga aliran udara segar.</p>`;
+            } else if (zoneKey === 'ams') {
+                camera.position.set(-15, 12, 22);
+                controls.target.set(-22, 1.75, 11);
+                titleEl.innerText = "Stasiun Perah Robotik (AMS)";
+                descEl.innerHTML = `<p>Sapi masuk secara mandiri 24/7. Lengan robotik mengidentifikasi posisi puting dengan sinar laser 3D dan menguji mutu susu secara in-line sebelum dialirkan ke tangki utama.</p>`;
+            } else if (zoneKey === 'feed') {
+                camera.position.set(20, 10, -3);
+                controls.target.set(0, 0, -8);
+                titleEl.innerText = "Jalur Pakan & Robot Pusher";
+                descEl.innerHTML = `<p>Robot pakan bergerak otonom di jalur pakan tiap 2 jam sekali untuk mendorong pakan mendekati jangkauan sapi demi meningkatkan efisiensi konsumsi pakan.</p>`;
+            } else if (zoneKey === 'stalls') {
+                camera.position.set(10, 12, 15);
+                controls.target.set(0, 0, 4);
+                titleEl.innerText = "Area Istirahat Sapi & Kipas HVLS";
+                descEl.innerHTML = `<p>Skat tempat tidur dialasi matras karet empuk. Di atasnya dipasang Kipas HVLS berdiameter besar yang diatur kecepatannya oleh algoritma THI.</p>`;
+            } else if (zoneKey === 'bcs') {
+                camera.position.set(-8, 8, 18);
+                controls.target.set(-14, 3, 11);
+                titleEl.innerText = "Kamera Depth 3D (BCS)";
+                descEl.innerHTML = `<p>Kamera dipasang di atas pintu keluar perah untuk merekam kontur tubuh sapi. AI memetakan nilai BCS secara otomatis tanpa kontak langsung.</p>`;
+            }
+        }
+
+        function reset3DCamera() {
+            focusZone('overview');
+        }
+
+        function onWindowResize() {
+            const container = document.querySelector('.canvas-container');
+            if (!container || !renderer) return;
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            fanBlades.forEach(fan => {
+                fan.rotation.y += 0.08;
+            });
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function() {
+            init3D();
+            updateTHISimulation();
+        };
+    </script>
+</body>
+</html>
